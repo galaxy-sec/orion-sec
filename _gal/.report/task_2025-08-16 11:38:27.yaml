@@ -1,0 +1,17 @@
+!Job
+name: flow
+tasks:
+- name: config
+  begin: 2025-08-16 11:38:27
+  stdout: ''
+  result: !Ok
+    running_time: 9ms
+  actions:
+  - name: gx.cmd
+    target: null
+    begin: 2025-08-16 11:38:27
+    stdout: |+
+      mac2.local
+
+    result: !Ok
+      running_time: 5ms

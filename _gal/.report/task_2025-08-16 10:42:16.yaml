@@ -1,0 +1,47 @@
+!Job
+name: flow
+tasks:
+- name: config
+  begin: 2025-08-16 10:42:11
+  stdout: ''
+  result: !Ok
+    running_time: 18ms
+  actions:
+  - name: gx.cmd
+    target: null
+    begin: 2025-08-16 10:42:11
+    stdout: |+
+      mac2.local
+
+    result: !Ok
+      running_time: 15ms
+- name: galaxy_flow@build
+  begin: 2025-08-16 10:42:16
+  stdout: ''
+  result: !Ok
+    running_time: 1ms
+  actions: []
+- name: pub to local
+  begin: 2025-08-16 10:42:16
+  stdout: ''
+  result: !Ok
+    running_time: 189ms
+  actions:
+  - name: gx.cmd
+    target: null
+    begin: 2025-08-16 10:42:16
+    stdout: ''
+    result: !Ok
+      running_time: 14ms
+  - name: gx.cmd
+    target: null
+    begin: 2025-08-16 10:42:16
+    stdout: ''
+    result: !Ok
+      running_time: 124ms
+  - name: gx.cmd
+    target: null
+    begin: 2025-08-16 10:42:16
+    stdout: ''
+    result: !Ok
+      running_time: 49ms

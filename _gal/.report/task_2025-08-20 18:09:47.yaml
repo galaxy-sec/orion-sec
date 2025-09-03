@@ -1,0 +1,75 @@
+!Job
+name: flow
+tasks:
+- name: config
+  begin: 2025-08-20 18:09:46
+  stdout: ''
+  result: !Ok
+    running_time: ''
+  actions: []
+- name: config
+  begin: 2025-08-20 18:09:46
+  stdout: ''
+  result: !Ok
+    running_time: ''
+  actions: []
+- name: config
+  begin: 2025-08-20 18:09:46
+  stdout: ''
+  result: !Ok
+    running_time: ''
+  actions: []
+- name: config
+  begin: 2025-08-20 18:09:46
+  stdout: ''
+  result: !Ok
+    running_time: ''
+  actions: []
+- name: config
+  begin: 2025-08-20 18:09:46
+  stdout: ''
+  result: !Ok
+    running_time: ''
+  actions: []
+- name: galaxy_flow@build
+  begin: 2025-08-20 18:09:46
+  stdout: ''
+  result: !Ok
+    running_time: 1ms
+  actions: []
+- name: config
+  begin: 2025-08-20 18:09:46
+  stdout: ''
+  result: !Ok
+    running_time: ''
+  actions: []
+- name: config
+  begin: 2025-08-20 18:09:46
+  stdout: ''
+  result: !Ok
+    running_time: ''
+  actions: []
+- name: pub to local
+  begin: 2025-08-20 18:09:46
+  stdout: ''
+  result: !Ok
+    running_time: 127ms
+  actions:
+  - name: gx.cmd
+    target: null
+    begin: 2025-08-20 18:09:46
+    stdout: ''
+    result: !Ok
+      running_time: 4ms
+  - name: gx.cmd
+    target: null
+    begin: 2025-08-20 18:09:46
+    stdout: ''
+    result: !Ok
+      running_time: 91ms
+  - name: gx.cmd
+    target: null
+    begin: 2025-08-20 18:09:47
+    stdout: ''
+    result: !Ok
+      running_time: 30ms
