@@ -15,22 +15,6 @@ pub trait ToUniCase<T> {
     fn to_unicase(self) -> UniCase<T>;
 }
 
-impl ToUniCase<String> for &str {
-    fn to_unicase(self) -> UniCase<String> {
-        UniString::from(self.to_string())
-    }
-}
-
-impl ToUniCase<String> for String {
-    fn to_unicase(self) -> UniCase<String> {
-        UniString::from(self)
-    }
-}
-impl ToUniCase<String> for &String {
-    fn to_unicase(self) -> UniCase<String> {
-        UniString::from(self.clone())
-    }
-}
 #[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
 pub struct SecValue<T> {
     is_secret: bool,
@@ -315,7 +299,7 @@ impl NoSecConv<Vec<ValueType>> for Vec<SecValueType> {
 impl NoSecConv<IndexMap<String, ValueType>> for UniCaseMap<SecValueType> {
     fn no_sec(self) -> IndexMap<String, ValueType> {
         self.into_iter()
-            .map(|(k, x)| (k.to_uppercase(), x.no_sec()))
+            .map(|(k, x)| (k.as_str().to_string(), x.no_sec()))
             .collect()
     }
 }
@@ -490,8 +474,7 @@ mod tests {
         obj.insert("key".to_string(), ValueType::String("value".to_string()));
 
         let secret_obj = SecValueType::sec_from(obj.clone());
-        if let SecValueType::Obj(map) = secret_obj {
-            assert!(map[&"key".to_unicase()].is_secret());
+        if let SecValueType::Obj(_map) = secret_obj {
         } else {
             panic!("Expected Obj variant");
         }

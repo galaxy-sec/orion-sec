@@ -3,8 +3,8 @@ use std::{env::home_dir, path::PathBuf};
 use log::info;
 use orion_conf::Yamlable;
 use orion_error::{ErrorOwe, ErrorWith};
+use orion_variate::vars::UpperKey;
 use orion_variate::vars::{EnvDict, ValueDict};
-use unicase::UniCase;
 
 use crate::{
     error::SecResult,
@@ -31,7 +31,7 @@ pub fn load_secfile() -> SecResult<SecValueObj> {
         info!(target: "exec","  load {}", path.display());
         for (k, v) in dict.iter() {
             vars_dict.insert(
-                UniCase::from(format!("SEC_{}", k.as_str().to_uppercase())),
+                UpperKey::from(format!("SEC_{}", k.as_str().to_uppercase())),
                 SecValueType::sec_from(v.clone()),
             );
         }

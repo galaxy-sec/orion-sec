@@ -1,5 +1,5 @@
 use indexmap::IndexMap;
-use unicase::UniCase;
+use orion_variate::vars::UpperKey;
 
-pub type UniString = UniCase<String>;
-pub type UniCaseMap<T> = IndexMap<UniCase<String>, T>;
+pub type UniString = UpperKey;
+pub type UniCaseMap<T> = IndexMap<UpperKey, T>;
