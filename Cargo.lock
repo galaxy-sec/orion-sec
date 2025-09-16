@@ -1302,8 +1302,8 @@ dependencies = [
 
 [[package]]
 name = "orion_variate"
-version = "0.9.1"
-source = "git+https://github.com/galaxy-sec/orion-variate.git?tag=v0.9.1#e7353af14d94129d9a2f3f56549836a6a8adf201"
+version = "0.9.2"
+source = "git+https://github.com/galaxy-sec/orion-variate.git?tag=v0.9.2#44480d40c5f5090e9897643a680ad1df582f3814"
 dependencies = [
  "anyhow",
  "async-trait",
