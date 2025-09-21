@@ -13,7 +13,7 @@ pub enum OrionSecReason {
 
 #[derive(Debug, PartialEq, Serialize, Error)]
 pub enum SecReason {
-    #[error("sensivive msg {0}")]
+    #[error("sensitive msg {0}")]
     SensitiveMsg(String),
 }
 

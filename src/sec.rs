@@ -208,9 +208,7 @@ impl PartialOrd for SecValueType {
             (SecValueType::Number(f), SecValueType::Number(s)) => f.partial_cmp(s),
             (SecValueType::Float(f), SecValueType::Float(s)) => f.partial_cmp(s),
             (SecValueType::Ip(f), SecValueType::Ip(s)) => f.partial_cmp(s),
-            _ => {
-                unreachable!("not support array , obj compare");
-            }
+            _ => None,
         }
     }
 }
@@ -234,7 +232,7 @@ impl SecValueType {
     pub fn to_nor(self) -> Self {
         match self {
             SecValueType::String(v) => Self::String(v.to_nor()),
-            SecValueType::Bool(v) => Self::Bool(v),
+            SecValueType::Bool(v) => Self::Bool(v.to_nor()),
             SecValueType::Number(v) => Self::Number(v.to_nor()),
             SecValueType::Float(v) => Self::Float(v.to_nor()),
             SecValueType::Ip(v) => Self::Ip(v.to_nor()),
@@ -246,7 +244,7 @@ impl SecValueType {
     pub fn to_sec(self) -> Self {
         match self {
             SecValueType::String(v) => Self::String(v.to_sec()),
-            SecValueType::Bool(v) => Self::Bool(v),
+            SecValueType::Bool(v) => Self::Bool(v.to_sec()),
             SecValueType::Number(v) => Self::Number(v.to_sec()),
             SecValueType::Float(v) => Self::Float(v.to_sec()),
             SecValueType::Ip(v) => Self::Ip(v.to_sec()),
@@ -314,45 +312,47 @@ impl ValueGetter<SecValueType> for SecValueObj {
             return None;
         }
 
-        //let mut current_value: Option<&SecValueType> = None;
-        let mut current_target = SecValueType::from(self.clone());
+        let mut current_value: Option<&SecValueType> = None;
+        let mut current_obj: Option<&SecValueObj> = Some(self);
 
         for part in parts {
-            // 检查是否为数组访问（如 "A[0]"）
-            if part.contains('[') && part.ends_with(']') {
-                let (key, index_str) = part.split_once('[').unwrap();
-                let index_str = index_str.trim_end_matches(']');
-                let index = index_str.parse::<usize>().ok()?;
-
-                if let SecValueType::Obj(obj) = current_target {
-                    // 获取数组或对象
-                    let value = obj.get(&UniString::from(key.to_string()))?;
-                    match value {
-                        SecValueType::List(list) => {
-                            if index >= list.len() {
-                                return None;
-                            }
-                            current_target = list[index].clone();
-                        }
-                        _ => return None,
-                    }
-                } else {
-                    return None;
-                }
+            if let Some((key, index)) = parse_index(part) {
+                let obj = current_obj.or_else(|| current_value.and_then(as_obj))?;
+                let value = obj.get(&UniString::from(key.to_string()))?;
+                let list = match value {
+                    SecValueType::List(list) => list,
+                    _ => return None,
+                };
+                let item = list.get(index)?;
+                current_value = Some(item);
+                current_obj = as_obj(item);
             } else {
-                // 普通键访问
-                if let SecValueType::Obj(obj) = current_target {
-                    if let Some(found) = obj.get(&UniString::from(part.to_string())) {
-                        current_target = found.clone();
-                    } else {
-                        return None;
-                    }
-                } else {
-                    return None;
-                }
+                let obj = current_obj.or_else(|| current_value.and_then(as_obj))?;
+                let found = obj.get(&UniString::from(part.to_string()))?;
+                current_value = Some(found);
+                current_obj = as_obj(found);
             }
         }
-        Some(current_target)
+
+        current_value.cloned()
+    }
+}
+
+fn parse_index(part: &str) -> Option<(&str, usize)> {
+    let start = part.find('[')?;
+    if !part.ends_with(']') {
+        return None;
+    }
+    let key = &part[..start];
+    let index_str = &part[start + 1..part.len() - 1];
+    let index = index_str.parse::<usize>().ok()?;
+    Some((key, index))
+}
+
+fn as_obj(value: &SecValueType) -> Option<&SecValueObj> {
+    match value {
+        SecValueType::Obj(map) => Some(map),
+        _ => None,
     }
 }
 
@@ -468,6 +468,16 @@ mod tests {
     }
 
     #[test]
+    fn test_bool_secret_flip() {
+        let bool_value = SecValueType::nor_from(true);
+        let secret_bool = bool_value.clone().to_sec();
+        assert!(matches!(secret_bool, SecValueType::Bool(ref v) if v.is_secret()));
+
+        let public_bool = secret_bool.to_nor();
+        assert!(matches!(public_bool, SecValueType::Bool(ref v) if !v.is_secret()));
+    }
+
+    #[test]
     fn test_nested_conversions() {
         // Test nested objects
         let mut obj = IndexMap::new();
@@ -520,6 +530,21 @@ mod tests {
         if let ValueType::Obj(normal_obj) = sec_obj.no_sec() {
             assert_eq!(normal_obj["NESTED"], ValueType::Number(100));
         }
+    }
+
+    #[test]
+    fn test_partial_cmp_mismatched_variants() {
+        let number = SecValueType::nor_from(1u64);
+        let string = SecValueType::nor_from("one".to_string());
+        assert_eq!(number.partial_cmp(&string), None);
+
+        let mut obj = UniCaseMap::new();
+        obj.insert("nested".into(), SecValueType::nor_from(2u64));
+        let list = vec![SecValueType::nor_from(3u64)];
+        assert_eq!(
+            SecValueType::Obj(obj).partial_cmp(&SecValueType::List(list)),
+            None
+        );
     }
 
     // Helper to check if a SecValueType is secret

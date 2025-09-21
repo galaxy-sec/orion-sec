@@ -1,6 +1,6 @@
-use std::{env::home_dir, path::PathBuf};
+use std::{env, path::PathBuf};
 
-use log::info;
+use log::{info, warn};
 use orion_conf::Yamlable;
 use orion_error::{ErrorOwe, ErrorWith};
 use orion_variate::vars::UpperKey;
@@ -27,7 +27,7 @@ pub fn load_secfile() -> SecResult<SecValueObj> {
     let path = env_path.unwrap_or(default);
     let mut vars_dict = SecValueObj::new();
     if path.exists() {
-        let dict = ValueDict::from_yml(&path).owe_logic().with(&path)?;
+        let dict = ValueDict::load_yaml(&path).owe_logic().with(&path)?;
         info!(target: "exec","  load {}", path.display());
         for (k, v) in dict.iter() {
             vars_dict.insert(
@@ -44,7 +44,24 @@ pub fn sec_value_default_path() -> PathBuf {
 }
 
 pub fn galaxy_dot_path() -> PathBuf {
-    home_dir()
-        .map(|x| x.join(".galaxy"))
-        .unwrap_or(PathBuf::from("./"))
+    match resolve_home_dir() {
+        Some(home) => home.join(".galaxy"),
+        None => {
+            warn!(target: "exec", "  HOME not set; defaulting to current directory for .galaxy");
+            PathBuf::from("./")
+        }
+    }
+}
+
+fn resolve_home_dir() -> Option<PathBuf> {
+    env::var_os("HOME")
+        .map(PathBuf::from)
+        .or_else(|| env::var_os("USERPROFILE").map(PathBuf::from))
+        .or_else(|| {
+            let drive = env::var_os("HOMEDRIVE")?;
+            let path = env::var_os("HOMEPATH")?;
+            let mut buf = PathBuf::from(drive);
+            buf.push(path);
+            Some(buf)
+        })
 }
