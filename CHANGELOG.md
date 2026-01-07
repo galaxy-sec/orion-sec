@@ -1,6 +1,9 @@
 # Changelog
 
-## [Unreleased]
+## [0.3.0]
+### Added
+- 新增 `load_secfile_by` 函数测试用例，覆盖 YAML/TOML 加载、键名大写转换、空文件处理等场景
+
 ### Changed
 - 重构：将硬编码字符串提取为常量，提升代码可维护性
   - `load.rs`: 新增 `SEC_PREFIX`、`SEC_VALUE_FILE_NAME`、`GALAXY_DOT_DIR`、`DEFAULT_FALLBACK_DIR` 常量
