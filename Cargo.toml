@@ -15,27 +15,27 @@ categories = ["config"]
 
 
 [dependencies]
-orion-error = "~0.5"
-orion_conf = { version = "~0.3" ,features = ["yaml"]}
+orion-error = "0.5"
+orion_conf = { version = "~0.3" ,features = ["yaml","toml"]}
 #orion_variate = { git = "https://github.com/galaxy-sec/orion-variate.git", tag = "v0.9.1" }
 orion-variate =  "~0.10"
-unicase = "~2.8"
-getset = "0.1.6"
+unicase = "2.8"
+getset = "0.1"
 fs_extra = "1.3"
-thiserror = "~2.0"
-chrono = "0.4.41"
-log = "~0.4"
+thiserror = "2.0"
+chrono = "0.4"
+log = "0.4"
 
 serde = "1.0"
 serde_derive = "1.0"
 url = "2.5"
-indexmap = "2.11"
+indexmap = "2.12"
 serde_yaml = "0.9"
-derive_more = { version = "2.0", features = ["full"] }
+derive_more = { version = "2.1", features = ["full"] }
 contracts = "0.6"
 once_cell = "1.21"
 
 
 [dev-dependencies]
 rstest = "0.26"
-tempfile = "3.10"
+tempfile = "3.24"
