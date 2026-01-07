@@ -11,6 +11,8 @@ use unicase::UniCase;
 
 use crate::types::{UniCaseMap, UniString};
 
+const SECRET_MASK: &str = "********";
+
 pub trait ToUniCase<T> {
     fn to_unicase(self) -> UniCase<T>;
 }
@@ -162,7 +164,7 @@ where
 {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         if self.is_secret {
-            write!(f, "***")
+            write!(f, "{}", SECRET_MASK)
         } else {
             write!(f, "{}", self.value)
         }
@@ -184,12 +186,12 @@ impl Display for SecValueType {
             SecValueType::Number(v) => write!(f, "{v}"),
             SecValueType::Float(v) => write!(f, "{v}"),
             SecValueType::Ip(v) => write!(f, "{v}"),
-            SecValueType::Obj(v) => write!(f, "obj:{v:#?}"),
-            SecValueType::List(v) => write!(f, "list:{v:#?}"),
+            SecValueType::Obj(v) => write!(f, "obj[{}]", v.len()),
+            SecValueType::List(v) => write!(f, "list[{}]", v.len()),
         }
     }
 }
-#[derive(Debug, Clone, PartialEq, From)]
+#[derive(Debug, Clone, PartialEq, From, Serialize, Deserialize)]
 pub enum SecValueType {
     String(SecString),
     Bool(SecBool),
@@ -368,7 +370,7 @@ mod tests {
     #[test]
     fn test_sec_value_display() {
         let secret_str = SecString::sec_from("password".to_string());
-        assert_eq!(format!("{secret_str}"), "***");
+        assert_eq!(format!("{secret_str}"), "********");
 
         let public_str = SecString::nor_from("username".to_string());
         assert_eq!(format!("{public_str}"), "username");

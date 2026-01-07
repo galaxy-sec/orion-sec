@@ -11,27 +11,40 @@ use crate::{
     sec::{NoSecConv, SecFrom, SecValueObj, SecValueType},
 };
 
+const SEC_PREFIX: &str = "SEC_";
+const SEC_VALUE_FILE_NAME: &str = "sec_value.yml";
+const GALAXY_DOT_DIR: &str = ".galaxy";
+const DEFAULT_FALLBACK_DIR: &str = "./";
+
 pub fn load_sec_dict() -> SecResult<EnvDict> {
     let space = load_secfile()?;
     let mut dict = EnvDict::new();
     for (k, v) in space.no_sec() {
         dict.insert(k, v);
     }
-    //let dict = EnvDict::from(space.no_sec());
     Ok(dict)
 }
 
 pub fn load_secfile() -> SecResult<SecValueObj> {
-    let env_path = std::env::var("GAL_SEC_FILE_PATH").map(PathBuf::from);
-    let default = sec_value_default_path();
-    let path = env_path.unwrap_or(default);
+    let default = sec_value_galaxy_path();
+    load_secfile_by(default)
+}
+
+pub fn load_galaxy_secfile() -> SecResult<SecValueObj> {
+    let default = sec_value_galaxy_path();
+    load_secfile_by(default)
+}
+
+pub fn load_secfile_by(sec_file: PathBuf) -> SecResult<SecValueObj> {
     let mut vars_dict = SecValueObj::new();
-    if path.exists() {
-        let dict = ValueDict::load_yaml(&path).owe_logic().with(&path)?;
-        info!(target: "exec","  load {}", path.display());
+    if sec_file.exists() {
+        let dict = ValueDict::load_yaml(&sec_file)
+            .owe_logic()
+            .with(&sec_file)?;
+        info!(target: "exec","  load {}", sec_file.display());
         for (k, v) in dict.iter() {
             vars_dict.insert(
-                UpperKey::from(format!("SEC_{}", k.as_str().to_uppercase())),
+                UpperKey::from(format!("{}{}", SEC_PREFIX, k.as_str().to_uppercase())),
                 SecValueType::sec_from(v.clone()),
             );
         }
@@ -39,16 +52,16 @@ pub fn load_secfile() -> SecResult<SecValueObj> {
     Ok(vars_dict)
 }
 
-pub fn sec_value_default_path() -> PathBuf {
-    galaxy_dot_path().join("sec_value.yml")
+pub fn sec_value_galaxy_path() -> PathBuf {
+    galaxy_dot_path().join(SEC_VALUE_FILE_NAME)
 }
 
 pub fn galaxy_dot_path() -> PathBuf {
     match resolve_home_dir() {
-        Some(home) => home.join(".galaxy"),
+        Some(home) => home.join(GALAXY_DOT_DIR),
         None => {
-            warn!(target: "exec", "  HOME not set; defaulting to current directory for .galaxy");
-            PathBuf::from("./")
+            warn!(target: "exec", "  HOME not set; defaulting to current directory for {}", GALAXY_DOT_DIR);
+            PathBuf::from(DEFAULT_FALLBACK_DIR)
         }
     }
 }
