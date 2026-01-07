@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased]
+### Changed
+- 重构：将硬编码字符串提取为常量，提升代码可维护性
+  - `load.rs`: 新增 `SEC_PREFIX`、`SEC_VALUE_FILE_NAME`、`GALAXY_DOT_DIR`、`DEFAULT_FALLBACK_DIR` 常量
+  - `sec.rs`: 新增 `SECRET_MASK` 常量用于密码掩码显示
+
 ## [0.2.0] - 2025-09-21
 ### Added
 - 扩充 README 与 AGENTS，提供快速上手、命令与贡献说明。

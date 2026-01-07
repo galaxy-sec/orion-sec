@@ -1,7 +1,7 @@
 use std::{env, path::PathBuf};
 
 use log::{info, warn};
-use orion_conf::Yamlable;
+use orion_conf::{TomlIO, Yamlable};
 use orion_error::{ErrorOwe, ErrorWith};
 use orion_variate::vars::UpperKey;
 use orion_variate::vars::{EnvDict, ValueDict};
@@ -27,20 +27,29 @@ pub fn load_sec_dict() -> SecResult<EnvDict> {
 
 pub fn load_secfile() -> SecResult<SecValueObj> {
     let default = sec_value_galaxy_path();
-    load_secfile_by(default)
+    load_secfile_by(default, SecFileFmt::Yaml)
 }
 
 pub fn load_galaxy_secfile() -> SecResult<SecValueObj> {
     let default = sec_value_galaxy_path();
-    load_secfile_by(default)
+    load_secfile_by(default, SecFileFmt::Yaml)
+}
+pub enum SecFileFmt {
+    Yaml,
+    Toml,
 }
 
-pub fn load_secfile_by(sec_file: PathBuf) -> SecResult<SecValueObj> {
+pub fn load_secfile_by(sec_file: PathBuf, fmt: SecFileFmt) -> SecResult<SecValueObj> {
     let mut vars_dict = SecValueObj::new();
     if sec_file.exists() {
-        let dict = ValueDict::load_yaml(&sec_file)
-            .owe_logic()
-            .with(&sec_file)?;
+        let dict = match fmt {
+            SecFileFmt::Yaml => ValueDict::load_yaml(&sec_file)
+                .owe_logic()
+                .with(&sec_file)?,
+            SecFileFmt::Toml => ValueDict::load_toml(&sec_file)
+                .owe_logic()
+                .with(&sec_file)?,
+        };
         info!(target: "exec","  load {}", sec_file.display());
         for (k, v) in dict.iter() {
             vars_dict.insert(
@@ -77,4 +86,87 @@ fn resolve_home_dir() -> Option<PathBuf> {
             buf.push(path);
             Some(buf)
         })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::io::Write;
+    use tempfile::NamedTempFile;
+
+    #[test]
+    fn test_load_secfile_by_nonexistent_file() {
+        let path = PathBuf::from("/nonexistent/path/to/file.yml");
+        let result = load_secfile_by(path, SecFileFmt::Yaml);
+        assert!(result.is_ok());
+        assert!(result.unwrap().is_empty());
+    }
+
+    #[test]
+    fn test_load_secfile_by_yaml() {
+        let mut file = NamedTempFile::with_suffix(".yml").unwrap();
+        writeln!(file, "username: admin").unwrap();
+        writeln!(file, "password: secret123").unwrap();
+        writeln!(file, "port: 8080").unwrap();
+
+        let result = load_secfile_by(file.path().to_path_buf(), SecFileFmt::Yaml);
+        assert!(result.is_ok());
+
+        let obj = result.unwrap();
+        assert_eq!(obj.len(), 3);
+        assert!(obj.contains_key(&UpperKey::from("SEC_USERNAME".to_string())));
+        assert!(obj.contains_key(&UpperKey::from("SEC_PASSWORD".to_string())));
+        assert!(obj.contains_key(&UpperKey::from("SEC_PORT".to_string())));
+    }
+
+    #[test]
+    fn test_load_secfile_by_toml() {
+        let mut file = NamedTempFile::with_suffix(".toml").unwrap();
+        writeln!(file, "api_key = \"abc123\"").unwrap();
+        writeln!(file, "debug = true").unwrap();
+
+        let result = load_secfile_by(file.path().to_path_buf(), SecFileFmt::Toml);
+        assert!(result.is_ok());
+
+        let obj = result.unwrap();
+        assert_eq!(obj.len(), 2);
+        assert!(obj.contains_key(&UpperKey::from("SEC_API_KEY".to_string())));
+        assert!(obj.contains_key(&UpperKey::from("SEC_DEBUG".to_string())));
+    }
+
+    #[test]
+    fn test_load_secfile_by_key_uppercase() {
+        let mut file = NamedTempFile::with_suffix(".yml").unwrap();
+        writeln!(file, "mixedCase: value1").unwrap();
+        writeln!(file, "lower_case: value2").unwrap();
+
+        let result = load_secfile_by(file.path().to_path_buf(), SecFileFmt::Yaml);
+        assert!(result.is_ok());
+
+        let obj = result.unwrap();
+        assert!(obj.contains_key(&UpperKey::from("SEC_MIXEDCASE".to_string())));
+        assert!(obj.contains_key(&UpperKey::from("SEC_LOWER_CASE".to_string())));
+    }
+
+    #[test]
+    fn test_load_secfile_by_values_are_secret() {
+        let mut file = NamedTempFile::with_suffix(".yml").unwrap();
+        writeln!(file, "token: my_secret_token").unwrap();
+
+        let result = load_secfile_by(file.path().to_path_buf(), SecFileFmt::Yaml);
+        assert!(result.is_ok());
+
+        let obj = result.unwrap();
+        let value = obj.get(&UpperKey::from("SEC_TOKEN".to_string())).unwrap();
+        assert!(matches!(value, SecValueType::String(s) if s.is_secret()));
+    }
+
+    #[test]
+    fn test_load_secfile_by_empty_file() {
+        let file = NamedTempFile::with_suffix(".yml").unwrap();
+
+        let result = load_secfile_by(file.path().to_path_buf(), SecFileFmt::Yaml);
+        assert!(result.is_ok());
+        assert!(result.unwrap().is_empty());
+    }
 }
