@@ -657,9 +657,9 @@ checksum = "42f5e15c9953c5e4ccceeb2e7382a716482c34515315f7b03532b8b4e8393d2d"
 
 [[package]]
 name = "orion-error"
-version = "0.5.5"
+version = "0.5.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "69a32d5716f1decc8128108099322d9e9c812698bf531828e7164dc914fe2dbf"
+checksum = "2379b42b93905be7ea54689820d863c1663a77e6950e758ddab0f402007ccfee"
 dependencies = [
  "derive-getters",
  "derive_more",
@@ -695,9 +695,9 @@ dependencies = [
 
 [[package]]
 name = "orion-variate"
-version = "0.10.2"
+version = "0.10.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "82c64bac262b91854fe4ce621bdc004b8b88bf98c75f71affb88dbe35aa30482"
+checksum = "21870ace53ca3d614951b87eb3d139c54180effd280fd536d3b01544d74967c1"
 dependencies = [
  "contracts",
  "derive-getters",
@@ -714,6 +714,7 @@ dependencies = [
  "serde_json",
  "serde_yaml",
  "thiserror",
+ "toml",
  "winnow",
 ]
 
