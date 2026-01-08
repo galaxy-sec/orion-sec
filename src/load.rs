@@ -101,8 +101,9 @@ fn resolve_home_dir() -> Option<PathBuf> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::fs;
     use std::io::Write;
-    use tempfile::NamedTempFile;
+    use tempfile::{NamedTempFile, TempDir};
 
     #[test]
     fn test_load_secfile_by_nonexistent_file() {
@@ -178,5 +179,99 @@ mod tests {
         let result = load_secfile_by(file.path().to_path_buf(), SecFileFmt::Yaml);
         assert!(result.is_ok());
         assert!(result.unwrap().is_empty());
+    }
+
+    #[test]
+    fn test_load_sec_dict_by_yaml() {
+        let temp_dir = TempDir::new().unwrap();
+        let old_home = env::var("HOME").ok();
+        env::set_var("HOME", temp_dir.path());
+
+        let dot_dir = temp_dir.path().join(".myapp");
+        fs::create_dir_all(&dot_dir).unwrap();
+
+        let sec_file = dot_dir.join("secrets.yml");
+        let mut file = fs::File::create(&sec_file).unwrap();
+        writeln!(file, "db_user: root").unwrap();
+        writeln!(file, "db_pass: password123").unwrap();
+
+        let result = load_sec_dict_by(".myapp", "secrets.yml", SecFileFmt::Yaml);
+        assert!(result.is_ok());
+
+        let dict = result.unwrap();
+        assert_eq!(dict.len(), 2);
+        assert!(dict.contains_key("SEC_DB_USER"));
+        assert!(dict.contains_key("SEC_DB_PASS"));
+
+        if let Some(home) = old_home {
+            env::set_var("HOME", home);
+        }
+    }
+
+    #[test]
+    fn test_load_sec_dict_by_toml() {
+        let temp_dir = TempDir::new().unwrap();
+        let old_home = env::var("HOME").ok();
+        env::set_var("HOME", temp_dir.path());
+
+        let dot_dir = temp_dir.path().join(".config");
+        fs::create_dir_all(&dot_dir).unwrap();
+
+        let sec_file = dot_dir.join("app.toml");
+        let mut file = fs::File::create(&sec_file).unwrap();
+        writeln!(file, "secret_key = \"abc123\"").unwrap();
+        writeln!(file, "enabled = true").unwrap();
+
+        let result = load_sec_dict_by(".config", "app.toml", SecFileFmt::Toml);
+        assert!(result.is_ok());
+
+        let dict = result.unwrap();
+        assert_eq!(dict.len(), 2);
+        assert!(dict.contains_key("SEC_SECRET_KEY"));
+        assert!(dict.contains_key("SEC_ENABLED"));
+
+        if let Some(home) = old_home {
+            env::set_var("HOME", home);
+        }
+    }
+
+    #[test]
+    fn test_load_sec_dict_by_nonexistent_dir() {
+        let temp_dir = TempDir::new().unwrap();
+        let old_home = env::var("HOME").ok();
+        env::set_var("HOME", temp_dir.path());
+
+        let result = load_sec_dict_by(".nonexistent", "file.yml", SecFileFmt::Yaml);
+        assert!(result.is_ok());
+        assert!(result.unwrap().is_empty());
+
+        if let Some(home) = old_home {
+            env::set_var("HOME", home);
+        }
+    }
+
+    #[test]
+    fn test_load_sec_dict_by_values_not_secret() {
+        let temp_dir = TempDir::new().unwrap();
+        let old_home = env::var("HOME").ok();
+        env::set_var("HOME", temp_dir.path());
+
+        let dot_dir = temp_dir.path().join(".test");
+        fs::create_dir_all(&dot_dir).unwrap();
+
+        let sec_file = dot_dir.join("data.yml");
+        let mut file = fs::File::create(&sec_file).unwrap();
+        writeln!(file, "value: test_data").unwrap();
+
+        let result = load_sec_dict_by(".test", "data.yml", SecFileFmt::Yaml);
+        assert!(result.is_ok());
+
+        let dict = result.unwrap();
+        // EnvDict 中的值已经通过 no_sec() 转换，不再是 secret
+        assert!(dict.contains_key("SEC_VALUE"));
+
+        if let Some(home) = old_home {
+            env::set_var("HOME", home);
+        }
     }
 }
