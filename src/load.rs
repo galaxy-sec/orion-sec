@@ -25,6 +25,16 @@ pub fn load_sec_dict() -> SecResult<EnvDict> {
     Ok(dict)
 }
 
+pub fn load_sec_dict_by(dot_name: &str, file_name: &str, fmt: SecFileFmt) -> SecResult<EnvDict> {
+    let sec_file = dot_path(dot_name).join(file_name);
+    let space = load_secfile_by(sec_file, fmt)?;
+    let mut dict = EnvDict::new();
+    for (k, v) in space.no_sec() {
+        dict.insert(k, v);
+    }
+    Ok(dict)
+}
+
 pub fn load_secfile() -> SecResult<SecValueObj> {
     let default = sec_value_galaxy_path();
     load_secfile_by(default, SecFileFmt::Yaml)
@@ -62,12 +72,12 @@ pub fn load_secfile_by(sec_file: PathBuf, fmt: SecFileFmt) -> SecResult<SecValue
 }
 
 pub fn sec_value_galaxy_path() -> PathBuf {
-    galaxy_dot_path().join(SEC_VALUE_FILE_NAME)
+    dot_path(GALAXY_DOT_DIR).join(SEC_VALUE_FILE_NAME)
 }
 
-pub fn galaxy_dot_path() -> PathBuf {
+pub fn dot_path(name: &str) -> PathBuf {
     match resolve_home_dir() {
-        Some(home) => home.join(GALAXY_DOT_DIR),
+        Some(home) => home.join(name),
         None => {
             warn!(target: "exec", "  HOME not set; defaulting to current directory for {}", GALAXY_DOT_DIR);
             PathBuf::from(DEFAULT_FALLBACK_DIR)
