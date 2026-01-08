@@ -185,7 +185,7 @@ mod tests {
     fn test_load_sec_dict_by_yaml() {
         let temp_dir = TempDir::new().unwrap();
         let old_home = env::var("HOME").ok();
-        env::set_var("HOME", temp_dir.path());
+        unsafe { env::set_var("HOME", temp_dir.path()) };
 
         let dot_dir = temp_dir.path().join(".myapp");
         fs::create_dir_all(&dot_dir).unwrap();
@@ -204,7 +204,7 @@ mod tests {
         assert!(dict.contains_key("SEC_DB_PASS"));
 
         if let Some(home) = old_home {
-            env::set_var("HOME", home);
+            unsafe { env::set_var("HOME", home) };
         }
     }
 
@@ -212,7 +212,7 @@ mod tests {
     fn test_load_sec_dict_by_toml() {
         let temp_dir = TempDir::new().unwrap();
         let old_home = env::var("HOME").ok();
-        env::set_var("HOME", temp_dir.path());
+        unsafe { env::set_var("HOME", temp_dir.path()) };
 
         let dot_dir = temp_dir.path().join(".config");
         fs::create_dir_all(&dot_dir).unwrap();
@@ -231,7 +231,7 @@ mod tests {
         assert!(dict.contains_key("SEC_ENABLED"));
 
         if let Some(home) = old_home {
-            env::set_var("HOME", home);
+            unsafe { env::set_var("HOME", home) };
         }
     }
 
@@ -239,14 +239,14 @@ mod tests {
     fn test_load_sec_dict_by_nonexistent_dir() {
         let temp_dir = TempDir::new().unwrap();
         let old_home = env::var("HOME").ok();
-        env::set_var("HOME", temp_dir.path());
+        unsafe { env::set_var("HOME", temp_dir.path()) };
 
         let result = load_sec_dict_by(".nonexistent", "file.yml", SecFileFmt::Yaml);
         assert!(result.is_ok());
         assert!(result.unwrap().is_empty());
 
         if let Some(home) = old_home {
-            env::set_var("HOME", home);
+            unsafe { env::set_var("HOME", home) };
         }
     }
 
@@ -254,7 +254,7 @@ mod tests {
     fn test_load_sec_dict_by_values_not_secret() {
         let temp_dir = TempDir::new().unwrap();
         let old_home = env::var("HOME").ok();
-        env::set_var("HOME", temp_dir.path());
+        unsafe { env::set_var("HOME", temp_dir.path()) };
 
         let dot_dir = temp_dir.path().join(".test");
         fs::create_dir_all(&dot_dir).unwrap();
@@ -271,7 +271,7 @@ mod tests {
         assert!(dict.contains_key("SEC_VALUE"));
 
         if let Some(home) = old_home {
-            env::set_var("HOME", home);
+            unsafe { env::set_var("HOME", home) };
         }
     }
 }
