@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.3.2] - 2026-01-08
+### Added
+- 增加 `SecReason` 与 `OrionSecReason` 的定义，提供 `SensitiveMsg`/`NoPermission`/`Deception`/`UnAuthenticated` 等场景化错误类型。
+- 覆盖 `SecReason` 与 `SecError`/`SecResult` 的序列化、显示与转换测试用例，确保错误码与信息表现一致。
+- `load.rs` 测试新增 `with_temp_home` 与 `HomeGuard`，统一封装临时 HOME 目录的创建与回收。
+
+### Fixed
+- 修复 `load_sec_dict_by_*` 测试直接操作全局 HOME 导致的竞态，确保在并行运行时不会互相覆盖环境变量。
+
 ## [0.3.0]
 ### Added
 - 新增 `load_secfile_by` 函数测试用例，覆盖 YAML/TOML 加载、键名大写转换、空文件处理等场景
