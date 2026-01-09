@@ -16,7 +16,7 @@ categories = ["config"]
 
 [dependencies]
 orion-error = "0.5"
-orion_conf = { version = "0.3" ,features = ["yaml","toml"]}
+orion_conf = { version = "0.4" ,features = ["yaml","toml"]}
 #orion_variate = { git = "https://github.com/galaxy-sec/orion-variate.git", tag = "v0.9.1" }
 orion-variate =  "0.10"
 unicase = "2.8"
