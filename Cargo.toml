@@ -1,6 +1,6 @@
 [package]
 name = "orion-sec"
-version = "0.3.2"
+version = "0.3.3"
 authors = ["wukong <sec-wukong@outlook.com>"]
 edition = "2024"
 description = "Secret-aware helpers for loading and masking Galaxy configuration values."

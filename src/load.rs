@@ -76,11 +76,18 @@ pub fn sec_value_galaxy_path() -> PathBuf {
 }
 
 pub fn dot_path(name: &str) -> PathBuf {
+    let current_dir = env::current_dir().unwrap_or_else(|_| PathBuf::from(DEFAULT_FALLBACK_DIR));
+    let local_candidate = current_dir.join(name);
+
+    if local_candidate.exists() {
+        return local_candidate;
+    }
+
     match resolve_home_dir() {
         Some(home) => home.join(name),
         None => {
-            warn!(target: "exec", "  HOME not set; defaulting to current directory for {}", GALAXY_DOT_DIR);
-            PathBuf::from(DEFAULT_FALLBACK_DIR)
+            warn!(target: "exec", "  HOME not set; defaulting to current directory for {}", name);
+            local_candidate
         }
     }
 }
@@ -104,7 +111,7 @@ mod tests {
     use std::ffi::OsString;
     use std::fs;
     use std::io::Write;
-    use std::path::Path;
+    use std::path::{Path, PathBuf};
     use std::sync::{Mutex, MutexGuard, OnceLock};
     use tempfile::{NamedTempFile, TempDir};
 
@@ -254,6 +261,63 @@ mod tests {
         });
     }
 
+    #[test]
+    fn test_dot_path_prefers_current_dir_before_home() {
+        let workspace = TempDir::new().unwrap();
+        let workspace_path = fs::canonicalize(workspace.path()).unwrap();
+        let local_dot_dir = workspace_path.join(GALAXY_DOT_DIR);
+        fs::create_dir_all(&local_dot_dir).unwrap();
+
+        with_temp_home(|home_path| {
+            let home_dot_dir = home_path.join(GALAXY_DOT_DIR);
+            fs::create_dir_all(&home_dot_dir).unwrap();
+
+            let _cwd_guard = CurrentDirGuard::set(&workspace_path);
+            let resolved = dot_path(GALAXY_DOT_DIR);
+            assert_eq!(resolved, local_dot_dir);
+        });
+    }
+
+    #[test]
+    fn test_dot_path_falls_back_to_home_when_local_missing() {
+        let workspace = TempDir::new().unwrap();
+        let workspace_path = fs::canonicalize(workspace.path()).unwrap();
+
+        with_temp_home(|home_path| {
+            let home_dot_dir = home_path.join(GALAXY_DOT_DIR);
+            fs::create_dir_all(&home_dot_dir).unwrap();
+
+            let _cwd_guard = CurrentDirGuard::set(&workspace_path);
+            let resolved = dot_path(GALAXY_DOT_DIR);
+            assert_eq!(resolved, home_dot_dir);
+        });
+    }
+
+    #[test]
+    fn test_load_sec_dict_by_prefers_current_dir() {
+        let workspace = TempDir::new().unwrap();
+        let workspace_path = fs::canonicalize(workspace.path()).unwrap();
+        let dot_name = ".pref";
+        let local_dot_dir = workspace_path.join(dot_name);
+        fs::create_dir_all(&local_dot_dir).unwrap();
+        let local_file = local_dot_dir.join("data.yml");
+        let mut local_writer = fs::File::create(&local_file).unwrap();
+        writeln!(local_writer, "local_only: true").unwrap();
+
+        with_temp_home(|home_path| {
+            let home_dot_dir = home_path.join(dot_name);
+            fs::create_dir_all(&home_dot_dir).unwrap();
+            let home_file = home_dot_dir.join("data.yml");
+            let mut home_writer = fs::File::create(&home_file).unwrap();
+            writeln!(home_writer, "home_only: true").unwrap();
+
+            let _cwd_guard = CurrentDirGuard::set(&workspace_path);
+            let dict = load_sec_dict_by(dot_name, "data.yml", SecFileFmt::Yaml).unwrap();
+            assert!(dict.contains_key("SEC_LOCAL_ONLY"));
+            assert!(!dict.contains_key("SEC_HOME_ONLY"));
+        });
+    }
+
     fn with_temp_home<F>(test: F)
     where
         F: FnOnce(&Path),
@@ -270,7 +334,7 @@ mod tests {
 
     impl HomeGuard {
         fn set(path: &Path) -> Self {
-            let lock = home_lock().lock().unwrap();
+            let lock = home_lock().lock().unwrap_or_else(|err| err.into_inner());
             let old_home = env::var_os("HOME");
             unsafe {
                 env::set_var("HOME", path);
@@ -300,5 +364,36 @@ mod tests {
     fn home_lock() -> &'static Mutex<()> {
         static HOME_MUTEX: OnceLock<Mutex<()>> = OnceLock::new();
         HOME_MUTEX.get_or_init(|| Mutex::new(()))
+    }
+
+    struct CurrentDirGuard {
+        old_dir: PathBuf,
+        _lock: MutexGuard<'static, ()>,
+    }
+
+    impl CurrentDirGuard {
+        fn set(path: &Path) -> Self {
+            let lock = current_dir_lock()
+                .lock()
+                .unwrap_or_else(|err| err.into_inner());
+            let old_dir = env::current_dir().unwrap();
+            env::set_current_dir(path).unwrap();
+
+            Self {
+                old_dir,
+                _lock: lock,
+            }
+        }
+    }
+
+    impl Drop for CurrentDirGuard {
+        fn drop(&mut self) {
+            env::set_current_dir(&self.old_dir).unwrap();
+        }
+    }
+
+    fn current_dir_lock() -> &'static Mutex<()> {
+        static CURRENT_DIR_MUTEX: OnceLock<Mutex<()>> = OnceLock::new();
+        CURRENT_DIR_MUTEX.get_or_init(|| Mutex::new(()))
     }
 }
