@@ -1,7 +1,7 @@
 use std::{env, path::PathBuf};
 
 use log::{info, warn};
-use orion_conf::{TomlIO, Yamlable};
+use orion_conf::{TomlIO, YamlIO};
 use orion_error::{ErrorOwe, ErrorWith};
 use orion_variate::vars::UpperKey;
 use orion_variate::vars::{EnvDict, ValueDict};
