@@ -1,6 +1,6 @@
 [package]
 name = "orion-sec"
-version = "0.3.4"
+version = "0.4.0"
 authors = ["wukong <sec-wukong@outlook.com>"]
 edition = "2024"
 description = "Secret-aware helpers for loading and masking Galaxy configuration values."
@@ -15,10 +15,10 @@ categories = ["config"]
 
 
 [dependencies]
-orion-error = "0.5"
-orion_conf = { version = "0.4" ,features = ["yaml","toml"]}
+orion-error = "0.6"
+orion_conf = { version = "0.5" ,features = ["yaml","toml"]}
 #orion_variate = { git = "https://github.com/galaxy-sec/orion-variate.git", tag = "v0.9.1" }
-orion-variate =  "0.10"
+orion-variate =  "0.11"
 unicase = "2.8"
 getset = "0.1"
 fs_extra = "1.3"
