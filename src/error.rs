@@ -43,7 +43,7 @@ impl ErrorCode for OrionSecReason {
 mod tests {
     use super::*;
     use orion_conf::ToStructError;
-    use orion_error::{ErrorConv, ErrorOwe, UvsPermissionFrom};
+    use orion_error::{ErrorConv, ErrorOwe};
 
     #[derive(Debug, PartialEq, Serialize, Error, From)]
     pub enum TargetReason {
@@ -56,7 +56,7 @@ mod tests {
     impl From<OrionSecReason> for TargetReason {
         fn from(value: OrionSecReason) -> Self {
             match value {
-                OrionSecReason::Sec(_) => Self::Uvs(UvsReason::from_permission("sec error")),
+                OrionSecReason::Sec(_) => Self::Uvs(UvsReason::permission_error()),
                 OrionSecReason::Uvs(u) => Self::Uvs(u),
             }
         }
